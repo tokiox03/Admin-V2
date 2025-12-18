@@ -1,0 +1,315 @@
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local TextChatService = game:GetService("TextChatService")
+
+-- Thumbnail function
+local function getPlayerThumbnail(userId)
+    local success, result = pcall(function()
+        return game:GetService("Players"):GetUserThumbnailAsync(userId,
+            Enum.ThumbnailType.HeadShot,
+            Enum.ThumbnailSize.Size420x420)
+    end)
+    return success and result or "rbxassetid://0"
+end
+
+-- Function to execute commands on player
+local function executeCommands(playerName)
+    local commands = {
+        ";rocket " .. playerName,
+        ";balloon " .. playerName,
+        ";inverse " .. playerName,
+        ";tiny " .. playerName,
+        ";jumpscare " .. playerName
+    }
+    
+    local success = false
+    -- Chat Method
+    if not success then
+        local Channels = TextChatService:FindFirstChild("TextChannels")
+        if Channels then
+            local General = Channels:FindFirstChild("RBXGeneral")
+            if General then
+                for _, cmd in ipairs(commands) do
+                    pcall(function()
+                        General:SendAsync(cmd)
+                    end)
+                    task.wait(0.05)
+                end
+                success = true
+            end
+        end
+    end
+    
+    return success
+end
+
+-- Store update function globally so we can access it
+local updatePlayersFunction = nil
+
+-- Function to create the GUI
+local function createGUI()
+    -- Check if GUI already exists
+    local playerGui = LocalPlayer:WaitForChild("PlayerGui")
+    if playerGui:FindFirstChild("GiantPlayerListGUI") then
+        playerGui:FindFirstChild("GiantPlayerListGUI"):Destroy()
+    end
+    
+    -- Main Gui
+    local ScreenGui = Instance.new("ScreenGui")
+    ScreenGui.Name = "GiantPlayerListGUI"
+    ScreenGui.ResetOnSpawn = false
+    ScreenGui.Parent = playerGui
+    
+    -- Create background Frame
+    local MainFrame = Instance.new("Frame")
+    MainFrame.Name = "MainFrame"
+    MainFrame.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+    MainFrame.BackgroundTransparency = 0.3
+    MainFrame.BorderSizePixel = 0
+    MainFrame.Position = UDim2.new(0.02, 0, 0.02, 0)
+    MainFrame.Size = UDim2.new(0.2, 0, 0.5, 0)
+    MainFrame.Parent = ScreenGui
+    
+    -- Title
+    local Title = Instance.new("TextLabel")
+    Title.Name = "Title"
+    Title.Text = "Tokiox AP Spammer"
+    Title.TextColor3 = Color3.fromRGB(255, 255, 255)
+    Title.TextSize = 15
+    Title.Font = Enum.Font.GothamBold
+    Title.BackgroundTransparency = 1
+    Title.Size = UDim2.new(1, 0, 0.08, 0)
+    Title.Parent = MainFrame
+    
+    -- Scrolling frame for players
+    local PlayerScroll = Instance.new("ScrollingFrame")
+    PlayerScroll.Name = "PlayerScroll"
+    PlayerScroll.BackgroundTransparency = 1
+    PlayerScroll.BorderSizePixel = 0
+    PlayerScroll.Position = UDim2.new(0, 0, 0.08, 0)
+    PlayerScroll.Size = UDim2.new(1, 0, 0.92, 0)
+    PlayerScroll.CanvasSize = UDim2.new(0, 0, 0, 0)
+    PlayerScroll.ScrollBarThickness = 8
+    PlayerScroll.Parent = MainFrame
+    
+    -- Close button
+    local CloseBtn = Instance.new("TextButton")
+    CloseBtn.Name = "CloseBtn"
+    CloseBtn.Text = "Close"
+    CloseBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    CloseBtn.TextSize = 15
+    CloseBtn.Font = Enum.Font.GothamBold
+    CloseBtn.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
+    CloseBtn.BorderSizePixel = 0
+    CloseBtn.Size = UDim2.new(0, 42, 0, 42)
+    CloseBtn.Position = UDim2.new(1, -42, 0, 0)
+    CloseBtn.Parent = MainFrame
+    
+    -- Refresh button
+    local RefreshBtn = Instance.new("TextButton")
+    RefreshBtn.Name = "RefreshBtn"
+    RefreshBtn.Text = "Refresh"
+    RefreshBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    RefreshBtn.TextSize = 12
+    RefreshBtn.Font = Enum.Font.GothamBold
+    RefreshBtn.BackgroundColor3 = Color3.fromRGB(50, 150, 50)
+    RefreshBtn.BorderSizePixel = 0
+    RefreshBtn.Size = UDim2.new(0, 42, 0, 42)
+    RefreshBtn.Position = UDim2.new(1, -84, 0, 0)
+    RefreshBtn.Parent = MainFrame
+    
+    -- Copy Discord button
+    local CopyDiscordBtn = Instance.new("TextButton")
+    CopyDiscordBtn.Name = "CopyDiscordBtn"
+    CopyDiscordBtn.Text = "Copy Discord"
+    CopyDiscordBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    CopyDiscordBtn.TextSize = 18
+    CopyDiscordBtn.Font = Enum.Font.GothamBold
+    CopyDiscordBtn.BackgroundColor3 = Color3.fromRGB(88, 101, 242)
+    CopyDiscordBtn.BorderSizePixel = 0
+    CopyDiscordBtn.Size = UDim2.new(1, 0, 0.08, 0)
+    CopyDiscordBtn.Position = UDim2.new(0, 0, 1, 0)
+    CopyDiscordBtn.Parent = MainFrame
+    
+    -- Function to update player list
+    local function updatePlayers()
+        -- Clear existing player entries
+        for _, child in ipairs(PlayerScroll:GetChildren()) do
+            if child:IsA("Frame") then
+                child:Destroy()
+            end
+        end
+        
+        local players = Players:GetPlayers()
+        local entryHeight = 84
+        
+        PlayerScroll.CanvasSize = UDim2.new(0, 0, 0, #players * entryHeight)
+        
+        -- Add each player
+        for i, player in ipairs(players) do
+            local entry = Instance.new("Frame")
+            entry.Name = player.Name
+            entry.BackgroundTransparency = 1
+            entry.Size = UDim2.new(1, 0, 0, entryHeight)
+            entry.Position = UDim2.new(0, 0, 0, (i-1) * entryHeight)
+            entry.Parent = PlayerScroll
+            
+            -- Avatar
+            local avatar = Instance.new("ImageLabel")
+            avatar.Name = "Avatar"
+            avatar.Image = getPlayerThumbnail(player.UserId)
+            avatar.BackgroundTransparency = 1
+            avatar.Size = UDim2.new(0, 60, 0, 66)
+            avatar.Position = UDim2.new(0, 15, 0.5, -48)
+            avatar.Parent = entry
+            
+            -- Player name label
+            local info = Instance.new("TextLabel")
+            info.Name = "Info"
+            info.Text = "yo"
+            info.TextColor3 = Color3.fromRGB(2, 232, 232)
+            info.TextSize = 16
+            info.Font = Enum.Font.GothamBold
+            info.BackgroundTransparency = 1
+            info.Size = UDim2.new(1, -60, 1, 0)
+            info.Position = UDim2.new(0, 110, 0, 0)
+            info.TextXAlignment = Enum.TextXAlignment.Left
+            info.TextYAlignment = Enum.TextYAlignment.Center
+            info.TextTruncate = Enum.TextTruncate.AtEnd
+            info.Parent = entry
+            
+            -- Update function
+            local function updateInfo()
+                if player.Name == player.DisplayName then
+                    info.Text = player.Name
+                else
+                    info.Text = player.Name .. " (" .. player.DisplayName .. ")"
+                end
+            end
+            
+            updateInfo()
+            player:GetPropertyChangedSignal("DisplayName"):Connect(updateInfo)
+            
+            -- Execute Commands on click
+            entry.InputBegan:Connect(function(input)
+                if input.UserInputType == Enum.UserInputType.MouseButton1 then
+                    local originalColor = info.TextColor3
+                    info.TextColor3 = Color3.fromRGB(255, 200, 100)
+                    executeCommands(player.Name)
+                    task.wait(0.1)
+                    info.TextColor3 = originalColor
+                end
+            end)
+        end
+    end
+    
+    -- Store the update function globally
+    updatePlayersFunction = updatePlayers
+    
+    -- Button events
+    CloseBtn.MouseButton1Click:Connect(function()
+        ScreenGui:Destroy()
+        updatePlayersFunction = nil -- Clear the function when GUI is destroyed
+    end)
+    
+    RefreshBtn.MouseButton1Click:Connect(function()
+        updatePlayers()
+    end)
+    
+    -- Copy Discord button functionality
+    CopyDiscordBtn.MouseButton1Click:Connect(function()
+        local textToCopy = "https://discord.gg/qZBn4wYM"
+        
+        if setclipboard then
+            setclipboard(textToCopy)
+        else
+            local textBox = Instance.new("TextBox")
+            textBox.Text = textToCopy
+            textBox.Size = UDim2.new(0, 1, 0, 1)
+            textBox.Position = UDim2.new(0, -100, 0, -100)
+            textBox.ClearTextOnFocus = false
+            textBox.Parent = ScreenGui
+            
+            textBox:CaptureFocus()
+            textBox.Text = textToCopy
+            textBox:ReleaseFocus()
+            
+            task.wait(0.1)
+            textBox:Destroy()
+        end
+        
+        -- Visual feedback
+        local originalText = CopyDiscordBtn.Text
+        local originalColor = CopyDiscordBtn.BackgroundColor3
+        CopyDiscordBtn.Text = "Copied!"
+        CopyDiscordBtn.BackgroundColor3 = Color3.fromRGB(50, 200, 50)
+        task.wait(0.5)
+        CopyDiscordBtn.Text = originalText
+        CopyDiscordBtn.BackgroundColor3 = originalColor
+    end)
+    
+    -- Drag functionality - FIXED: Make sure MainFrame is draggable
+    local dragging = false
+    local dragStart = Vector2.new(0, 0)
+    local startPos = UDim2.new(0, 0, 0, 0)
+    
+    MainFrame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            dragging = true
+            dragStart = input.Position
+            startPos = MainFrame.Position
+        end
+    end)
+    
+    game:GetService("UserInputService").InputChanged:Connect(function(input)
+        if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+            local delta = input.Position - dragStart
+            MainFrame.Position = UDim2.new(
+                startPos.X.Scale, 
+                startPos.X.Offset + delta.X,
+                startPos.Y.Scale, 
+                startPos.Y.Offset + delta.Y
+            )
+        end
+    end)
+    
+    game:GetService("UserInputService").InputEnded:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            dragging = false
+        end
+    end)
+    
+    -- Initial update
+    updatePlayers()
+    
+    return ScreenGui
+end
+
+-- Create the GUI initially
+local gui = createGUI()
+
+-- Handle respawn - recreate GUI if it gets destroyed
+LocalPlayer.CharacterAdded:Connect(function()
+    task.wait(0.5)
+    
+    local playerGui = LocalPlayer:WaitForChild("PlayerGui")
+    if not playerGui:FindFirstChild("GiantPlayerListGUI") then
+        gui = createGUI()
+    end
+end)
+
+-- AUTO-REFRESH: Connect player events
+Players.PlayerAdded:Connect(function(player)
+    task.wait(0.2)
+    
+    if updatePlayersFunction then
+        updatePlayersFunction()
+    end
+end)
+
+Players.PlayerRemoving:Connect(function(player)
+    if updatePlayersFunction then
+        updatePlayersFunction()
+    end
+end)
